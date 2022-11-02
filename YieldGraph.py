@@ -9,16 +9,13 @@ import yfinance as yf
 import plotly.graph_objects as go
 import pandas as pd
 
-
+datetime.timedelta
 # get stock prices
 def get_market_data(selected_ticker, start=None, end=None):
     # Ticker
     ticker = yf.Ticker(selected_ticker)
     # get data
-    prices = ticker.history(start=start,
-                            end=end,
-                            period='max',
-                            interval='1mo')
+    prices = ticker.history(period='max', interval='1mo')
 
     # get dividends from the initial prices file
     dividends = prices[prices['Dividends'] != 0]
@@ -96,7 +93,7 @@ if __name__ == '__main__':
     # input start and end date
     with col1:
         start_date = st.date_input(label='Start Date',
-                                   value=None,
+                                   value=datetime.date(2015, 1, 1),
                                    min_value=datetime.date(1900, 1, 1),
                                    max_value=datetime.date.today())
     with col2:
