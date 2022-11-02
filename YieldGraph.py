@@ -144,3 +144,9 @@ if __name__ == '__main__':
 
     # show data
     st.dataframe(historical_prices)
+
+    with st.sidebar:
+        st.info('This is an educational project developed by '
+                'Hamid Vakilzadeh, PhD and Kelsey Clark at '
+                'the University of Wisconsin Whitewater. '
+                'November 2022')
