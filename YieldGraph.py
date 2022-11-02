@@ -56,7 +56,8 @@ def get_market_data(selected_ticker, start=None, end=None):
         prices['annual_dividends'] = 0
 
     prices['Yield'] = prices['annual_dividends'] / prices['Close']
-
+    prices['Date'] = pd.DatetimeIndex(prices['Date']).date
+    prices = prices[(prices['Date'] >= start) & (prices['Date'] <= end)]
     return dict(prices=prices, pays_dividend=pays_dividend)
 
 
@@ -89,7 +90,7 @@ def graph(data):
 
 if __name__ == '__main__':
     # input ticker
-    ticker = st.text_input(label='Enter Ticker', placeholder='AAPL', value='AAPL')
+    ticker = st.text_input(label='Enter Ticker', placeholder='TXN', value='TXN')
 
     # two columns
     col1, col2 = st.columns(2)
