@@ -9,7 +9,7 @@ import yfinance as yf
 import plotly.graph_objects as go
 import pandas as pd
 
-datetime.timedelta
+
 # get stock prices
 def get_market_data(selected_ticker, start=None, end=None):
     # Ticker
@@ -38,13 +38,16 @@ def get_market_data(selected_ticker, start=None, end=None):
         dividends['year'] = pd.DatetimeIndex(dividends['Date']).year
         annual_dividends = dividends.groupby('year')['Dividends'] \
             .sum().rename('annual_dividends').reset_index()
+
+        last_year_dividends = dividends.groupby('year')['Dividends'] \
+            .sum().shift(periods=1).rename('last_year_dividends').reset_index()
+
         prices = pd.merge(left=prices,
                           right=annual_dividends,
                           on='year',
                           how='left')
-        beginning_price = prices.groupby('year')['Close'].first().rename('beginning_price')
         prices = pd.merge(left=prices,
-                          right=beginning_price,
+                          right=last_year_dividends,
                           on='year',
                           how='left')
 
@@ -59,8 +62,8 @@ def get_market_data(selected_ticker, start=None, end=None):
 
 # calculate undervalue and overvalue prices
 def yield_calculations(data, min_yield, max_yield):
-    data['overvalue_price'] = data['annual_dividends'] / min_yield
-    data['undervalue_price'] = data['annual_dividends'] / max_yield
+    data['overvalue_price'] = data['last_year_dividends'] / min_yield
+    data['undervalue_price'] = data['last_year_dividends'] / max_yield
 
 
 # create graph
