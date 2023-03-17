@@ -100,9 +100,7 @@ def get_news_text(url: str):
 
 
 def make_pretty(styler):
-    styler.set_caption("Weather Conditions")
-    styler.format_index(lambda v: v.strftime("%A"))
-    styler.background_gradient(axis=None, vmin=1, vmax=5, cmap="YlGnBu")
+    styler.format(formatter=(lambda x: 'M$ {:,.0f}'.format(x))).background_gradient(cmap=cm)
     return styler
 
 
@@ -139,10 +137,9 @@ if __name__ == '__main__':
         bs_col1, bs_col2 = st.columns(2)
         bs_col1.metric(label='Currency', value=bs_reported_currency)
         bs_col2.metric(label='Scale', value='Millions')
-        st.checkbox(label='View Balance Sheet')
-        st.dataframe(df.style.format(formatter=(lambda x: 'M$ {:,.0f}'.format(x)))
-                     .background_gradient(cmap=cm)
-                 )
+        st.checkbox(label='View Balance Sheet', key='show_bs', value=True)
+        if st.session_state.show_bs:
+            st.dataframe(df.style.pipe(make_pretty), use_container_width=True)
 
 
         st.session_state.selected_bs_line = st.multiselect(
@@ -157,24 +154,39 @@ if __name__ == '__main__':
 
 
     with income_tab:
-        st.write(st.session_state.income_statement)
-        """
-        is1, is2 = st.columns([2,5])
-        with is1:
-            st.session_state.selected_is_line = st.selectbox(
-                'Income Statement Line Item',
-                options=st.session_state.income_statement.columns.tolist()
-            )
-        with is2:
-            st.session_state.income_statement['converted'] = \
-                pd.to_numeric(st.session_state.income_statement[st.session_state.selected_is_line]) / 1000000
-            st.line_chart(data = st.session_state.income_statement,
-                          y = 'converted',
-                          x = 'fiscalDateEnding')"""
+        df = st.session_state.income_statement
+        is_col1, is_col2 = st.columns(2)
+        is_col1.metric(label='Currency', value=is_reported_currency)
+        is_col2.metric(label='Scale', value='Millions')
+        st.checkbox(label='View Income Statement')
+        st.dataframe(df.style.pipe(make_pretty), use_container_width=True)
+
+        st.session_state.selected_is_line = st.multiselect(
+            'Income Statement Line Item',
+            options=st.session_state.income_statement.index
+        )
+        chart_df = st.session_state.income_statement.transpose()
+
+        st.line_chart(data=chart_df,
+                      y=st.session_state.selected_is_line,
+                      )
 
     with cashflow_tab:
-        st.write(st.session_state.cash_flow)
+        df = st.session_state.cash_flow
+        cf_col1, cf_col2 = st.columns(2)
+        cf_col1.metric(label='Currency', value=cf_reported_currency)
+        cf_col2.metric(label='Scale', value='Millions')
+        st.checkbox(label='View Statement of Cash Flow', key='show_cf', value=True)
+        if st.session_state.show_cf:
+            st.dataframe(df.style.pipe(make_pretty), use_container_width=True)
 
+        st.session_state.selected_cf_line = st.multiselect(
+            'Cash Flow Line Item',
+            options=st.session_state.cash_flow.index
+        )
+        chart_df = st.session_state.cash_flow.transpose()
+
+        st.line_chart(data=chart_df, y=st.session_state.selected_cf_line)
 
     with news_tab:
         news = get_news(st.session_state.selected_ticker)
@@ -182,4 +194,3 @@ if __name__ == '__main__':
                                      options=[title['title'] for title in news],
                                      )
         st.session_state.selected_news = [url['link'] for url in news if url['title'] == selected_news][0]
-        st.write(get_news_text(st.session_state.selected_news))
