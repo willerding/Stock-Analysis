@@ -3,27 +3,26 @@ Author Hamid, Vakilzadeh PhD
 March 2023
 
 """
-import numpy as np
 import pandas as pd
 import yaml
 import streamlit as st
 from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.fundamentaldata import FundamentalData
+from alpha_vantage.techindicators import TechIndicators
 from alpha_vantage.sectorperformance import SectorPerformances
 import requests
-import json
-import openai
 import openai
 import yfinance as yf
 from bs4 import BeautifulSoup
 import seaborn as sns
 
 secrets = yaml.safe_load(open('secrets.yaml'))
-openai.api_key = secrets['openai']
 
+openai.api_key = secrets['openai']
 ts = TimeSeries(key=secrets['alpha_vantage'], output_format='pandas')
 fd = FundamentalData(key=secrets['alpha_vantage'])
 sp = SectorPerformances(key=secrets['alpha_vantage'])
+ti = TechIndicators(key=secrets['alpha_vantage'])
 
 cm = sns.light_palette("seagreen", as_cmap=True)
 
@@ -91,12 +90,27 @@ def get_news(ticker: str):
     return symbol.get_news()
 
 
-@st.cache_resource
+@st.cache_data
 def get_news_text(url: str):
     response = requests.get(url)
-    soup = BeautifulSoup(response.content)
-    text = soup.find('body')
+    soup = BeautifulSoup(response.content, features='lxml')
+    text = soup.find('div', attrs={'class': 'caas-body'}).text
     return text
+
+
+@st.cache_data
+def get_news_summary(text: str, ticker: str):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "user", "content": "Hello!"},
+            {"role": "user", "content": "Please summarize the news article briefly. Also highlight the parts "
+                                        f"thar talk about {ticker}"
+             },
+            {"role": "user", "content": f"{text}"}
+        ]
+    )
+    return response['choices'][0]['message']['content']
 
 
 def make_pretty(styler):
@@ -105,6 +119,7 @@ def make_pretty(styler):
 
 
 if __name__ == '__main__':
+    st.set_page_config(page_title= 'Financial Statement Anaylysis', page_icon='📈', layout='centered')
     st.session_state.selected_ticker = st.selectbox(label='Select Ticker',
                                                     options=['AAPL', 'AMZN',
                                                              'META', 'NFLX'])
@@ -144,7 +159,8 @@ if __name__ == '__main__':
 
         st.session_state.selected_bs_line = st.multiselect(
             'Balance Sheet Line Item',
-            options=st.session_state.balance_sheet.index
+            options=st.session_state.balance_sheet.index,
+            default=['totalAssets', 'totalLiabilities', 'totalShareholderEquity']
         )
         chart_df = st.session_state.balance_sheet.transpose()
 
@@ -158,12 +174,14 @@ if __name__ == '__main__':
         is_col1, is_col2 = st.columns(2)
         is_col1.metric(label='Currency', value=is_reported_currency)
         is_col2.metric(label='Scale', value='Millions')
-        st.checkbox(label='View Income Statement')
-        st.dataframe(df.style.pipe(make_pretty), use_container_width=True)
+        st.checkbox(label='View Income Statement', key='show_is', value=True)
+        if st.session_state.show_is:
+            st.dataframe(df.style.pipe(make_pretty), use_container_width=True)
 
         st.session_state.selected_is_line = st.multiselect(
             'Income Statement Line Item',
-            options=st.session_state.income_statement.index
+            options=st.session_state.income_statement.index,
+            default=['grossProfit', 'totalRevenue', 'costOfRevenue']
         )
         chart_df = st.session_state.income_statement.transpose()
 
@@ -182,7 +200,8 @@ if __name__ == '__main__':
 
         st.session_state.selected_cf_line = st.multiselect(
             'Cash Flow Line Item',
-            options=st.session_state.cash_flow.index
+            options=st.session_state.cash_flow.index,
+            default='changeInCashAndCashEquivalents'
         )
         chart_df = st.session_state.cash_flow.transpose()
 
@@ -190,7 +209,23 @@ if __name__ == '__main__':
 
     with news_tab:
         news = get_news(st.session_state.selected_ticker)
-        selected_news = st.selectbox('Select News title to read a summary',
+        st.subheader('I can summarize news for you!')
+        col1, col2 = st.columns([1,7])
+        col1.image('Resources/bot.jpeg')
+        selected_news = col2.selectbox('Select News title and I will create you a summary of that article',
                                      options=[title['title'] for title in news],
                                      )
         st.session_state.selected_news = [url['link'] for url in news if url['title'] == selected_news][0]
+        col2.button(label='**summarize!**', key='summarize_btn')
+
+        if st.session_state.summarize_btn:
+            st.session_state.news_summary = get_news_summary(text=st.session_state.selected_news,
+                                                             ticker=st.session_state.selected_ticker)
+            st.session_state.expanded = True
+
+        if 'news_summary' not in st.session_state:
+            st.session_state.expanded = False
+            st.session_state.news_summary = ''
+
+        with col2.expander(label='summary', expanded=st.session_state.expanded):
+            st.write(st.session_state.news_summary)
