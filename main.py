@@ -132,7 +132,6 @@ if __name__ == '__main__':
     st.session_state.income_statement, is_reported_currency = get_income_statement(st.session_state.selected_ticker)
     st.session_state.cash_flow, cf_reported_currency = get_cash_flow(st.session_state.selected_ticker)
 
-    st.json(st.session_state.company_overview)
 
     company_info_tab, price_chart_tab, bs_tab, income_tab, cashflow_tab , news_tab = \
         st.tabs(['About the Company', 'Stock Price Chart', 'Balance Sheet',
