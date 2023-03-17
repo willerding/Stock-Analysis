@@ -1,6 +1,6 @@
 """
 Author Hamid, Vakilzadeh PhD
-November 2022
+March 2023
 
 """
 import numpy as np
@@ -70,6 +70,7 @@ def standardize_data(database: pd.DataFrame):
     data.drop(['reportedCurrency'], inplace=True)
     data.replace(to_replace="None", value=0, inplace=True)
     data = data.apply(pd.to_numeric)
+    data = data.apply(lambda x: x/1000000)
     return data ,currency
 
 @st.cache_data
@@ -135,26 +136,25 @@ if __name__ == '__main__':
 
     with bs_tab:
         df = st.session_state.balance_sheet
-        st.metric(label='Currency', value=bs_reported_currency)
+        bs_col1, bs_col2 = st.columns(2)
+        bs_col1.metric(label='Currency', value=bs_reported_currency)
+        bs_col2.metric(label='Scale', value='Millions')
         st.checkbox(label='View Balance Sheet')
-        st.dataframe(df.style.format(formatter=(lambda x: 'M$ {:,.0f}'.format(x / 1e6)))
+        st.dataframe(df.style.format(formatter=(lambda x: 'M$ {:,.0f}'.format(x)))
                      .background_gradient(cmap=cm)
                  )
 
-        """
-        bs1, bs2 = st.columns([2,5])
-        with bs1:
-            st.session_state.selected_bs_line = st.selectbox(
-                'Balance Sheet Line Item',
-                options=st.session_state.balance_sheet.columns.tolist()[2:]
-            )
-        with bs2:
-            st.session_state.income_statement['converted'] = \
-                pd.to_numeric(st.session_state.income_statement[st.session_state.selected_is_line]) / 1000000
-            st.line_chart(data = st.session_state.income_statement,
-                          y = 'converted',
-                          x = 'fiscalDateEnding')
-        """
+
+        st.session_state.selected_bs_line = st.multiselect(
+            'Balance Sheet Line Item',
+            options=st.session_state.balance_sheet.index
+        )
+        chart_df = st.session_state.balance_sheet.transpose()
+
+        st.line_chart(data = chart_df,
+                      y = st.session_state.selected_bs_line,
+                      )
+
 
     with income_tab:
         st.write(st.session_state.income_statement)
