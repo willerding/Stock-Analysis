@@ -139,8 +139,8 @@ if __name__ == '__main__':
 
     # inside the 'About the Company' tab
     with company_info_tab:
-        # display company info by
-        # calling the function company_info with the first element of the company overview details stored in the session state
+        # display company info by calling the function company_info
+        # with the first element of the company overview details stored in the session state
         company_info(company_detail=st.session_state.company_overview[0])
 
     # inside the 'Stock Price Chart' tab
@@ -171,6 +171,6 @@ if __name__ == '__main__':
         company_cash_flow(formatter=make_pretty, currency=cf_reported_currency)
 
     with news_tab:
-        # display the latest news about the company by
-        # calling the 'company_news' function with the first element of the company overview details stored in the session state
+        # display the latest news about the company by calling the 'company_news' function
+        # with the first element of the company overview details stored in the session state
         company_news(ticker=st.session_state.selected_ticker)
