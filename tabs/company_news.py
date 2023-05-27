@@ -4,8 +4,6 @@ import streamlit as st
 import yfinance as yf
 from bs4 import BeautifulSoup
 
-openai.api_key = st.secrets['openai']
-
 
 # use Streamlit's cache decorator to store the result of this function, so it only runs once
 @st.cache_data
@@ -32,6 +30,7 @@ def get_news_text(url: str):
 # use Streamlit's cache decorator to store the result of this function, so it only runs once
 @st.cache_data
 def get_news_summary(text: str, ticker: str):
+    openai.api_key = st.secrets['openai']
     # this function takes a text string (a news article) and a ticker string, sends them to the OpenAI
     # GPT-3.5-turbo model to generate a summary, and returns the summary text
     response = openai.ChatCompletion.create(

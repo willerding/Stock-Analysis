@@ -168,4 +168,7 @@ if __name__ == '__main__':
     with news_tab:
         # display the latest news about the company by calling the 'company_news' function
         # with the first element of the company overview details stored in the session state
-        company_news(ticker=st.session_state.selected_ticker)
+        if 'openai' in st.secrets:
+            company_news(ticker=st.session_state.selected_ticker)
+        else:
+            st.error('Please add your OpenAI API key to the secrets.toml file.')
