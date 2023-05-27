@@ -5,13 +5,11 @@ from alpha_vantage.timeseries import TimeSeries
 # Import the YAML library for parsing YAML files
 import yaml
 
-# Open the secrets.yaml file and load the contents into the secrets dictionary
-secrets = yaml.safe_load(open('secrets.yaml'))
 
 # Define a function for displaying a company's price chart
 def company_price_chart():
     # Initialize a TimeSeries object with the API key from the secrets file
-    ts = TimeSeries(key=secrets['alpha_vantage'], output_format='pandas')
+    ts = TimeSeries(key=st.secrets['alpha_vantage'], output_format='pandas')
 
     # Define a function for fetching weekly stock prices,
     # decorated with Streamlit's caching decorator to speed up subsequent calls

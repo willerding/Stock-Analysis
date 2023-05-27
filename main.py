@@ -20,14 +20,10 @@ from tabs import (company_info,
                   company_news)
 
 
-# load secrets
-secrets = yaml.safe_load(open('secrets.yaml'))
-
-
 # Initialize FundamentalData, SectorPerformances, and TechIndicators objects using your Alpha Vantage API key
-fd = FundamentalData(key=secrets['alpha_vantage'])
-sp = SectorPerformances(key=secrets['alpha_vantage'])
-ti = TechIndicators(key=secrets['alpha_vantage'])
+fd = FundamentalData(key=st.secrets['alpha_vantage'])
+sp = SectorPerformances(key=st.secrets['alpha_vantage'])
+ti = TechIndicators(key=st.secrets['alpha_vantage'])
 
 
 # Set up a seaborn color palette
@@ -40,7 +36,7 @@ def find_match(ticker: str = 'AAPL'):
                                   params={'function': 'SYMBOL_SEARCH',
                                           'keywords': ticker,
                                           'datatype': 'json',
-                                          'apikey': secrets['alpha_vantage']}
+                                          'apikey': st.secrets['alpha_vantage']}
                  )
     # Return the JSON response
     return response.json()
@@ -112,7 +108,6 @@ if __name__ == '__main__':
 
     # configure Streamlit page properties (title, icon, and layout)
     st.set_page_config(page_title='Financial Statement Analysis', page_icon='📈', layout='centered')
-
     # create a dropdown menu for selecting ticker with default options as 'AAPL', 'AMZN', 'META', 'NFLX'
     st.session_state.selected_ticker = st.selectbox(label='Select Ticker',
                                                     options=['AAPL', 'AMZN',

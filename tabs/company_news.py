@@ -3,12 +3,8 @@ import openai
 import streamlit as st
 import yfinance as yf
 from bs4 import BeautifulSoup
-import yaml
 
-# load secrets
-secrets = yaml.safe_load(open('secrets.yaml'))
-
-openai.api_key = secrets['openai']
+openai.api_key = st.secrets['openai']
 
 
 # use Streamlit's cache decorator to store the result of this function, so it only runs once
