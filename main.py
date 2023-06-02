@@ -21,17 +21,18 @@ from tabs import (company_info,
 
 
 # Initialize FundamentalData, SectorPerformances, and TechIndicators objects using your Alpha Vantage API key
-fd = FundamentalData(key=st.secrets['alpha_vantage'])
+fd = FundamentalData(key=st.secrets['alpha_vantage']) #find more info in https://www.alphavantage.co/documentation/
 sp = SectorPerformances(key=st.secrets['alpha_vantage'])
 ti = TechIndicators(key=st.secrets['alpha_vantage'])
 
 
 # Set up a seaborn color palette
+# read the docs https://seaborn.pydata.org/generated/seaborn.light_palette.html
 cm = sns.light_palette("seagreen", as_cmap=True)
 
 
-# Function to search for a given ticker on Alpha Vantage
 def find_match(ticker: str = 'AAPL'):
+    # Function to search for a given ticker on Alpha Vantage
     response = requests.get(url='https://www.alphavantage.co/query',
                                   params={'function': 'SYMBOL_SEARCH',
                                           'keywords': ticker,
@@ -43,13 +44,12 @@ def find_match(ticker: str = 'AAPL'):
 
 
 # Use Streamlit's cache decorator to store the result of this function, so it only runs once
-@st.cache_data
+@st.cache_data # read more at https://docs.streamlit.io/en/stable/caching.html
 def company_overview(ticker: str):
     # This function gets the company overview for a given ticker
     return fd.get_company_overview(symbol=ticker)
 
 
-# Use Streamlit's cache decorator to store the result of this function, so it only runs once
 @st.cache_data
 def sector_data():
     # This function gets sector performance data
@@ -57,49 +57,58 @@ def sector_data():
     return data
 
 
-# Use Streamlit's cache decorator to store the result of this function, so it only runs once
 @st.cache_data
 def get_income_statement(ticker: str):
     # This function gets the annual income statement for a given ticker and standardizes the data
-    data = fd.get_income_statement_annual(symbol=ticker)
+    data = fd.get_income_statement_annual(symbol=ticker) # read the docs https://www.alphavantage.co/documentation/
     data, currency = standardize_data(data[0])
     return data, currency
 
 
 def standardize_data(database: pd.DataFrame):
     # Function to standardize a DataFrame returned by Alpha Vantage
-    data = database.transpose()
-    data.columns = data.iloc[0]
-    currency = data.iloc[1,1]
-    data.drop(data.index[0:1], inplace=True)
+    # transpose the data
+    data = database.transpose() # read the docs https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.transpose.html
+    # set the first row as the column names
+    data.columns = data.iloc[0] # read the docs https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.columns.html
+    # get the reported currency
+    currency = data.iloc[1,1] # read the docs https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.iloc.html
+    # drop the first two rows
+    data.drop(data.index[0:1], inplace=True) # read the docs https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.drop.html
+    # drop the 'reportedCurrency' column
     data.drop(['reportedCurrency'], inplace=True)
-    data.replace(to_replace="None", value=0, inplace=True)
-    data = data.apply(pd.to_numeric)
-    data = data.apply(lambda x: x/1000000)  # convert data to millions
+    # replace 'None' values with 0
+    data.replace(to_replace="None", value=0, inplace=True) # read the docs https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.replace.html
+    # convert all data to numeric
+    data = data.apply(pd.to_numeric) # read the docs https://pandas.pydata.org/docs/reference/api/pandas.to_numeric.html
+    # convert data to millions
+    data = data.apply(lambda x: x/1000000)  # read the docs https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.apply.html
+    # return the standardized data and the reported currency
     return data ,currency
 
 
-# Use Streamlit's cache decorator to store the result of this function, so it only runs once
 @st.cache_data
 def get_balance_sheet(ticker: str):
     # This function gets the annual balance sheet for a given ticker and standardizes the data
-    data = fd.get_balance_sheet_annual(symbol=ticker)
+    data = fd.get_balance_sheet_annual(symbol=ticker) # read the docs https://www.alphavantage.co/documentation/
     data, currency = standardize_data(data[0])
     return data, currency
 
 
-# Use Streamlit's cache decorator to store the result of this function, so it only runs once
-# This function gets the annual cash flow statement for a given ticker and standardizes the data
 @st.cache_data
 def get_cash_flow(ticker: str):
-    data = fd.get_cash_flow_annual(symbol=ticker)
+    # This function gets the annual cash flow statement for a given ticker and standardizes the data
+    # get the data
+    data = fd.get_cash_flow_annual(symbol=ticker) # read the docs https://www.alphavantage.co/documentation/
+    # standardize the data
     data, currency = standardize_data(data[0])
+    # return the standardized data and the reported currency
     return data, currency
 
 
-# Function to format a DataFrame for pretty printing
 def make_pretty(styler):
-    styler.format(formatter=(lambda x: 'M$ {:,.0f}'.format(x))).background_gradient(cmap=cm)
+    # Function to format a DataFrame for pretty printing
+    styler.format(formatter=(lambda x: 'M$ {:,.0f}'.format(x))).background_gradient(cmap=cm) # read the docs https://pandas.pydata.org/docs/reference/api/pandas.io.formats.style.Styler.format.html
     return styler
 
 
@@ -107,13 +116,16 @@ def make_pretty(styler):
 if __name__ == '__main__':
 
     # configure Streamlit page properties (title, icon, and layout)
-    st.set_page_config(page_title='Financial Statement Analysis', page_icon='📈', layout='centered')
+    st.set_page_config(page_title='Financial Statement Analysis',
+                       page_icon='📈',
+                       layout='centered') # read the docs https://docs.streamlit.io/library/api-reference/utilities/st.set_page_config
     # create a dropdown menu for selecting ticker with default options as 'AAPL', 'AMZN', 'META', 'NFLX'
     st.session_state.selected_ticker = st.selectbox(label='Select Ticker',
                                                     options=['AAPL', 'AMZN',
-                                                             'META', 'NFLX'])
+                                                             'META', 'NFLX']) # read the docs https://docs.streamlit.io/library/api-reference/widgets/st.selectbox
 
     # fetch and store the company overview details for the selected ticker
+    # read the docs https://docs.streamlit.io/library/api-reference/session-state
     st.session_state.company_overview = company_overview(st.session_state.selected_ticker)
 
     # fetch and store the balance sheet for the selected ticker and its reported currency
@@ -130,7 +142,7 @@ if __name__ == '__main__':
     # each tab is assigned to a corresponding variable for future reference
     company_info_tab, price_chart_tab, bs_tab, income_tab, cashflow_tab, news_tab = \
         st.tabs(['About the Company', 'Stock Price Chart', 'Balance Sheet',
-                 'Income Statement', 'Statement of Cash Flow', 'News'])
+                 'Income Statement', 'Statement of Cash Flow', 'News']) # read the docs https://docs.streamlit.io/library/api-reference/layout/st.tabs
 
     # inside the 'About the Company' tab
     with company_info_tab:
